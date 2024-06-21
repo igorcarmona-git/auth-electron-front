@@ -25,6 +25,7 @@
     "electron-updater": "^6.1.7",
     "localforage": "^1.10.0",
     "match-sorter": "^6.3.4",
+    "nodemon": "^3.1.4",
     "react-hook-form": "^7.51.4",
     "react-router-dom": "^6.23.1",
     "sort-by": "^1.2.0",

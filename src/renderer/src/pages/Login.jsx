@@ -1,54 +1,62 @@
+import { useState, React } from 'react';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
+import { useNavigate, Link } from 'react-router-dom';
 import API from '../utils/api';
+import '../styles/Login.css';
 
-const loginValidator = yup
-  .object()
-  .shape({
-    email: yup.string()
-    .email('Campo deve ser um e-mail')
-    .required('E-mail obrigatório'),
-    password: yup.string()
-    .min(6,"No minimo 6 digitos")
-    .required("Campo Obrigatório"),
-  })
-  .required();
+const loginSchema = yup.object().shape({
+  username: yup.string().required('Usuário obrigatório'),
+  password: yup.string().min(6, 'Senha deve ter pelo menos 6 caracteres').required('Senha obrigatória')
+});
 
 function Login() {
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(true);
+  const { register, handleSubmit, formState: { errors }, setError, clearErrors } = useForm({
+    resolver: yupResolver(loginSchema)
+  });
 
-    const { register, handleSubmit, formState:{ errors } } = useForm({
-        resolver: yupResolver(loginValidator),
-      });
+  const onSubmit = async (dataValues) => {
+    try {
+      // Limpar erros anteriores ao enviar novo login
+      clearErrors();
 
+      const response = await API.post('login', dataValues);
+      sessionStorage.setItem('token', response.data?.token);
 
-    async function submit(values){
-        try {
-            
-            const {data , status} = await API.post('login', values)
-            console.log({data, status})
-            localStorage.setItem('token', data.token)
-        } catch (error) {
-            console.log(error.response.data)
-            
-        }
+      console.log('Login realizado com sucesso:  token: ', sessionStorage.getItem('token'));
+      navigate('/home');
+    } catch (error) {
+      if (error) {
+        setError('username', { type: 'manual', message: 'Credenciais inválidas' });
+        setError('password', { type: 'manual', message: 'Credenciais inválidas' });
+      }
+    } finally {
+      setLoading(false);
     }
+  };
 
-
-    return <form onSubmit={handleSubmit((values)=> submit(values))}>
-        <div className="campo">
-            <label htmlFor="email">E-mail</label>
-            <input {...register('email')} name="email" type="email" id="email" placeholder="seu email"/>
-            {errors.email && <span>{errors.email.message}</span>}
+  return (
+    <div className="container">
+      <h2>Login</h2>
+      <form onSubmit={handleSubmit(onSubmit)} className="form-control">
+        <div>
+          <label htmlFor="username">Usuário</label>
+          <input {...register('username')} type="text" id="username" placeholder="Seu usuário" />
+          {errors.username && <span className="error-message">{errors.username.message}</span>}
         </div>
-        <div className="campo">
-            <label htmlFor="password">Senha</label>
-            <input {...register('password')} name="password" type="password" id="password" placeholder="sua senha"/>
-            {errors.password && <span>{errors.password.message}</span>}
+        <div>
+          <label htmlFor="password">Senha</label>
+          <input {...register('password')} type="password" id="password" placeholder="Sua senha" />
+          {errors.password && <span className="error-message">{errors.password.message}</span>}
         </div>
-
-        <button type='submit' >Entrar</button>
-    </form>;
+        <button type="submit">Entrar</button>
+        <Link to="/register">Registrar-se</Link>
+      </form>
+    </div>
+  );
 }
 
 export default Login;
